@@ -3,43 +3,50 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ação Premiada 3.0</title>
+<title>Ação Premiada 4.0</title>
 
 <style>
 body{
 margin:0;
-font-family:Arial;
-background:#000;
+font-family:'Segoe UI',sans-serif;
+background:linear-gradient(135deg,#0f0f0f,#1a1a1a);
 color:#fff;
 }
 
 header{
 background:linear-gradient(90deg,#000,#222,#000);
-padding:20px;
+padding:25px;
 text-align:center;
-border-bottom:2px solid gold;
+border-bottom:3px solid gold;
 }
 
 header h1{
 color:gold;
+font-size:28px;
 letter-spacing:3px;
 }
 
 .numbers{
 display:grid;
 grid-template-columns:repeat(10,1fr);
-gap:5px;
-max-width:500px;
-margin:20px auto;
+gap:6px;
+max-width:600px;
+margin:30px auto;
 }
 
 .number{
 background:#fff;
 color:#000;
-padding:10px;
+padding:12px;
 text-align:center;
-border-radius:5px;
+border-radius:8px;
 cursor:pointer;
+font-weight:bold;
+transition:0.3s;
+}
+
+.number:hover{
+transform:scale(1.05);
 }
 
 .number.reserved{
@@ -50,24 +57,24 @@ cursor:not-allowed;
 
 .number.selected{
 background:gold;
-color:#000;
 }
 
 .form{
-max-width:400px;
-margin:20px auto;
+max-width:450px;
+margin:30px auto;
 background:#111;
-padding:20px;
-border:1px solid gold;
-border-radius:10px;
+padding:25px;
+border-radius:15px;
+border:2px solid gold;
+box-shadow:0 0 20px rgba(255,215,0,0.2);
 }
 
-input,button{
+input,button,textarea{
 width:100%;
-padding:10px;
-margin-top:10px;
+padding:12px;
+margin-top:12px;
+border-radius:8px;
 border:none;
-border-radius:5px;
 }
 
 button{
@@ -76,26 +83,29 @@ font-weight:bold;
 cursor:pointer;
 }
 
-.admin{
-max-width:400px;
-margin:20px auto;
-background:#111;
-padding:20px;
-border:1px solid red;
-border-radius:10px;
+.pagamento{
+max-width:500px;
+margin:30px auto;
+background:#000;
+padding:25px;
+border-radius:15px;
+border:2px solid gold;
 display:none;
+text-align:center;
+}
+
+#qrcode{
+margin:20px auto;
 }
 
 footer{
 text-align:center;
 padding:20px;
-background:#000;
 border-top:1px solid gold;
 margin-top:40px;
 }
 </style>
 </head>
-
 <body>
 
 <header>
@@ -107,43 +117,44 @@ margin-top:40px;
 
 <div class="form">
 <input type="text" id="name" placeholder="Nome completo">
-<input type="text" id="whatsapp" placeholder="WhatsApp">
-<button onclick="comprar()">Reservar Números</button>
-<div id="resultado"></div>
+<input type="text" id="whatsapp" placeholder="WhatsApp com DDD">
+<button onclick="comprar()">Gerar Pagamento</button>
 </div>
 
-<div class="admin" id="adminPanel">
-<h3>Painel Admin</h3>
-<input type="password" id="adminSenha" placeholder="Senha Admin">
-<button onclick="acessarAdmin()">Entrar</button>
-<button onclick="sortear()">Sortear Número</button>
-<div id="listaCompradores"></div>
+<div class="pagamento" id="telaPagamento">
+<h2>Pagamento via Pix</h2>
+<h3 id="valorTotal"></h3>
+<div id="qrcode"></div>
+<textarea id="pixCode"></textarea>
+<button onclick="gerarPDF()">Baixar Comprovante PDF</button>
 </div>
 
 <footer>
-© 2026 Ação Premiada 3.0 | Pix: stharlen1@gmail.com
+© 2026 Ação Premiada 4.0 | Pix: stharlen1@gmail.com
 </footer>
 
-<script type="module">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue, set, push, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCOBE5z9Y9Vegpmx3bjn5ZoF46X4pCrnCk",
-  authDomain: "acao-premiada.firebaseapp.com",
-  databaseURL: "https://acao-premiada-default-rtdb.firebaseio.com",
-  projectId: "acao-premiada",
-  storageBucket: "acao-premiada.firebasestorage.app",
-  messagingSenderId: "1027063922704",
-  appId: "1:1027063922704:web:a817f161b2c546e73f0a95"
+apiKey: "AIzaSyCOBE5z9Y9Vegpmx3bjn5ZoF46X4pCrnCk",
+authDomain: "acao-premiada.firebaseapp.com",
+databaseURL: "https://acao-premiada-default-rtdb.firebaseio.com",
+projectId: "acao-premiada",
+storageBucket: "acao-premiada.firebasestorage.app",
+messagingSenderId: "1027063922704",
+appId: "1:1027063922704:web:a817f161b2c546e73f0a95"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const numbersDiv = document.getElementById("numbers");
-let selected = [];
+const numbersDiv=document.getElementById("numbers");
+let selected=[];
 
 for(let i=1;i<=100;i++){
 let div=document.createElement("div");
@@ -154,36 +165,60 @@ numbersDiv.appendChild(div);
 }
 
 function selecionar(el,num){
-if(el.classList.contains("reserved")) return;
+if(el.classList.contains("reserved"))return;
 el.classList.toggle("selected");
-if(selected.includes(num)){
-selected=selected.filter(n=>n!==num);
-}else{
+selected.includes(num)?
+selected=selected.filter(n=>n!==num):
 selected.push(num);
 }
+
+function gerarPix(valor){
+return `00020126580014br.gov.bcb.pix0136stharlen1@gmail.com520400005303986540${valor.toFixed(2)}5802BR5913ACAO PREMIADA6006BRASIL62070503***6304ABCD`;
 }
 
-function comprar(){
+window.comprar=function(){
 let nome=document.getElementById("name").value;
 let whats=document.getElementById("whatsapp").value;
-
 if(selected.length==0)return alert("Selecione números");
 
+let total=selected.length*10;
+
 selected.forEach(num=>{
-set(ref(db,"numeros/"+num),{
-nome:nome,
-whatsapp:whats
-});
+set(ref(db,"numeros/"+num),{nome,whats});
 });
 
+let pix=gerarPix(total);
+
+document.getElementById("valorTotal").innerText=`Total: R$ ${total}`;
+document.getElementById("pixCode").value=pix;
+document.getElementById("telaPagamento").style.display="block";
+
+document.getElementById("qrcode").innerHTML="";
+new QRCode(document.getElementById("qrcode"),pix);
+
+window.dadosCompra={nome,whats,numeros:[...selected],total};
 selected=[];
-alert("Reservado com sucesso!");
-}
+};
+
+window.gerarPDF=function(){
+const { jsPDF } = window.jspdf;
+const doc=new jsPDF();
+
+doc.setFontSize(18);
+doc.text("COMPROVANTE - ACAO PREMIADA",20,20);
+doc.setFontSize(12);
+doc.text(`Nome: ${dadosCompra.nome}`,20,40);
+doc.text(`WhatsApp: ${dadosCompra.whats}`,20,50);
+doc.text(`Numeros: ${dadosCompra.numeros.join(", ")}`,20,60);
+doc.text(`Total Pago: R$ ${dadosCompra.total}`,20,70);
+doc.text("Chave Pix: stharlen1@gmail.com",20,80);
+
+doc.save("comprovante.pdf");
+};
 
 onValue(ref(db,"numeros"),snapshot=>{
 let data=snapshot.val();
 document.querySelectorAll(".number").forEach(n=>n.classList.remove("reserved"));
-
 if(data){
 Object.keys(data).forEach(num=>{
 numbersDiv.children[num-1].classList.add("reserved");
@@ -192,32 +227,6 @@ document.getElementById("contador").innerText=
 "Vendidos: "+Object.keys(data).length+"/100";
 }
 });
-
-/* ADMIN */
-window.acessarAdmin=function(){
-let senha=document.getElementById("adminSenha").value;
-if(senha==="1234"){
-document.getElementById("listaCompradores").innerHTML="Acesso liberado";
-get(ref(db,"numeros")).then(snapshot=>{
-let dados=snapshot.val();
-let lista="";
-for(let n in dados){
-lista+=`<p>${n} - ${dados[n].nome}</p>`;
-}
-document.getElementById("listaCompradores").innerHTML=lista;
-});
-}
-};
-
-window.sortear=function(){
-get(ref(db,"numeros")).then(snapshot=>{
-let dados=snapshot.val();
-let nums=Object.keys(dados);
-let sorteado=nums[Math.floor(Math.random()*nums.length)];
-alert("Número sorteado: "+sorteado);
-});
-};
-
 </script>
 
 </body>
