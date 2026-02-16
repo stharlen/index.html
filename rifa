@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ação Premiada</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)),
+    url('https://images.unsplash.com/photo-1608889175119-5e4a6e2f2d4f');
+    background-size: cover;
+    color: #fff;
+}
+
+/* LETREIRO */
+.header {
+    text-align: center;
+    padding: 25px;
+    background: linear-gradient(90deg,#000,#1a1a1a,#000);
+    border-bottom: 2px solid gold;
+}
+
+.header h1 {
+    color: gold;
+    font-size: 34px;
+    letter-spacing: 3px;
+    margin: 0;
+    animation: brilho 2s infinite alternate;
+}
+
+@keyframes brilho {
+    from { text-shadow: 0 0 5px gold; }
+    to { text-shadow: 0 0 20px goldenrod; }
+}
+
+/* CARROSSEL */
+.carousel {
+    max-width: 500px;
+    margin: 20px auto;
+    position: relative;
+}
+
+.carousel img {
+    width: 100%;
+    border-radius: 12px;
+    display: none;
+}
+
+.carousel img.active {
+    display: block;
+}
+
+.indicators {
+    text-align: center;
+    margin-top: 5px;
+}
+
+.indicators span {
+    height: 10px;
+    width: 10px;
+    background: #666;
+    display: inline-block;
+    border-radius: 50%;
+    margin: 0 3px;
+}
+
+.indicators .active {
+    background: gold;
+}
+
+/* TIMER */
+.timer-container {
+    max-width: 400px;
+    margin: 15px auto;
+    text-align: center;
+}
+
+.progress {
+    height: 8px;
+    background: #333;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 5px;
+}
+
+.progress-bar {
+    height: 8px;
+    background: gold;
+    width: 100%;
+}
+
+/* CONTADOR */
+.counter {
+    text-align: center;
+    margin-top: 10px;
+    color: gold;
+}
+
+/* NUMEROS */
+.numbers {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 6px;
+    max-width: 500px;
+    margin: 20px auto;
+}
+
+.number {
+    padding: 10px;
+    background: #fff;
+    color: #000;
+    text-align: center;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.number.selected {
+    background: gold;
+    color: #000;
+}
+
+.number.reserved {
+    background: #444;
+    color: #fff;
+    cursor: not-allowed;
+}
+
+/* FORM */
+.form {
+    max-width: 450px;
+    margin: 20px auto;
+    background: #111;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid gold;
+}
+
+input, button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 6px;
+    border: none;
+}
+
+input {
+    background: #222;
+    color: #fff;
+}
+
+button {
+    background: gold;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover {
+    background: goldenrod;
+}
+
+/* QR */
+.qr {
+    text-align: center;
+    margin-top: 10px;
+}
+
+/* RODAPE */
+footer {
+    text-align: center;
+    padding: 20px;
+    background: #000;
+    border-top: 1px solid gold;
+    margin-top: 40px;
+    font-size: 14px;
+    color: #aaa;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+    <h1>🍀 AÇÃO PREMIADA 🍀</h1>
+</div>
+
+<div class="carousel">
+    <img src="https://images.unsplash.com/photo-1607083206968-13611e3d76db" class="active">
+    <img src="https://images.unsplash.com/photo-1578926287943-8a8b51f70a5f">
+    <img src="https://images.unsplash.com/photo-1607349913338-fca6f7fc42d0">
+    <div class="indicators">
+        <span class="active"></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+
+<div class="timer-container">
+    <div id="timer">⏳ 05:00</div>
+    <div class="progress">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+</div>
+
+<div class="counter" id="contador"></div>
+
+<div class="numbers" id="numbers"></div>
+
+<div class="form">
+    <input type="text" id="name" placeholder="Nome completo">
+    <input type="text" id="whatsapp" placeholder="WhatsApp com DDD">
+    <button onclick="finalizarCompra()">Reservar e Gerar Pix</button>
+    <div id="resultado"></div>
+</div>
+
+<footer>
+© 2026 Ação Premiada | Sistema Profissional 2.0<br>
+Pagamento via Pix: <strong>stharlen1@gmail.com</strong>
+</footer>
+
+<script>
+const totalNumbers = 100;
+const valorPorNumero = 10;
+const pixKey = "stharlen1@gmail.com";
+let selectedNumbers = [];
+let tempoRestante = 300;
+let countdown;
+
+let reservedNumbers = JSON.parse(localStorage.getItem("reservados")) || [];
+
+const numbersDiv = document.getElementById("numbers");
+
+function atualizarContador(){
+document.getElementById("contador").innerText =
+"🎟️ Números vendidos: " + reservedNumbers.length + " / 100";
+}
+
+for (let i = 1; i <= totalNumbers; i++) {
+    const div = document.createElement("div");
+    div.className = "number";
+    div.innerText = i.toString().padStart(2, '0');
+    if(reservedNumbers.includes(i)){
+        div.classList.add("reserved");
+    }
+    div.onclick = () => selecionarNumero(div, i);
+    numbersDiv.appendChild(div);
+}
+atualizarContador();
+
+function selecionarNumero(element, number) {
+    if (reservedNumbers.includes(number)) return;
+    if (selectedNumbers.length === 0) iniciarTemporizador();
+
+    if (selectedNumbers.includes(number)) {
+        selectedNumbers = selectedNumbers.filter(n => n !== number);
+        element.classList.remove("selected");
+    } else {
+        selectedNumbers.push(number);
+        element.classList.add("selected");
+    }
+}
+
+function iniciarTemporizador(){
+clearInterval(countdown);
+tempoRestante = 300;
+countdown = setInterval(()=>{
+let min = Math.floor(tempoRestante/60);
+let seg = tempoRestante%60;
+document.getElementById("timer").innerText =
+"⏳ "+min.toString().padStart(2,'0')+":"+seg.toString().padStart(2,'0');
+
+document.getElementById("progressBar").style.width =
+(tempoRestante/300*100)+"%";
+
+tempoRestante--;
+if(tempoRestante<0){
+clearInterval(countdown);
+liberarNumeros();
+}
+},1000);
+}
+
+function liberarNumeros(){
+alert("Tempo expirado!");
+document.querySelectorAll(".number.selected")
+.forEach(el=>el.classList.remove("selected"));
+selectedNumbers=[];
+}
+
+function finalizarCompra(){
+if(selectedNumbers.length===0)return;
+
+clearInterval(countdown);
+
+selectedNumbers.forEach(n=>reservedNumbers.push(n));
+localStorage.setItem("reservados",JSON.stringify(reservedNumbers));
+atualizarContador();
+
+let total = selectedNumbers.length*valorPorNumero;
+
+let qr = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=PIX:${pixKey}|VALOR:${total}`;
+
+document.getElementById("resultado").innerHTML=`
+<p>Total: R$ ${total},00</p>
+<p>Chave Pix: ${pixKey}</p>
+<div class="qr">
+<img src="${qr}">
+</div>
+`;
+
+selectedNumbers=[];
+location.reload();
+}
+
+/* CARROSSEL */
+let slide=0;
+const slides=document.querySelectorAll(".carousel img");
+const dots=document.querySelectorAll(".indicators span");
+
+setInterval(()=>{
+slides[slide].classList.remove("active");
+dots[slide].classList.remove("active");
+slide=(slide+1)%slides.length;
+slides[slide].classList.add("active");
+dots[slide].classList.add("active");
+},3000);
+</script>
+
+</body>
+</html>
